@@ -1,0 +1,44 @@
+name: Nightly build
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get current date
+        run: echo "DATE=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+
+      - name: Checkout LLVM
+        uses: actions/checkout@v6
+        with:
+          repository: llvm/llvm-project
+
+      - name: Configure LLVM
+        run: |
+          cmake \
+            -G Ninja \
+            -S llvm \
+            -B build \
+            -D CMAKE_BUILD_TYPE="Release" \
+            -D LLVM_ENABLE_PROJECTS="clang" \
+            -D LLVM_ENABLE_RUNTIMES="compiler-rt" \
+            -D LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
+
+      - name: Build LLVM
+        run: cmake --build build -j $(nproc --all)
+
+      - name: Install LLVM
+        run: |
+          cmake --install build --prefix llvm-m68k-nightly-$DATE
+          tar -czvf llvm-m68k-nightly-$DATE.tar.gz llvm-m68k-nightly-$DATE
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: llvm-m68k-nightly-$DATE
+          files: llvm-m68k-nightly-$DATE.tar.gz
+
