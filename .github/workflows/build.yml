@@ -14,29 +14,33 @@ jobs:
     steps:
       - name: Get current date
         run: echo "DATE=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+      
+      - name: Checkout
+        uses: actions/checkout@v6
 
       - name: Checkout LLVM
         uses: actions/checkout@v6
         with:
           repository: llvm/llvm-project
+          path: llvm-project
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
 
       - name: Configure LLVM
-        run: ./x.sh configure
+        run: cd llvm-project && ../x.sh configure
 
       - name: Build LLVM
-        run: ./x.sh build
+        run: cd llvm-project && ../x.sh build
 
       - name: Package LLVM
         run: |
-          tar -czvf llvm-m68k-nightly.tar.gz llvm-m68k-nightly
+          cd llvm-project && tar -czvf llvm-m68k-nightly.tar.gz llvm-m68k-nightly
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           name: llvm-m68k-nightly-${{ env.DATE }}
           tag_name: llvm-m68k-nightly-${{ env.DATE }}
-          files: llvm-m68k-nightly.tar.gz
+          files: llvm-project/llvm-m68k-nightly.tar.gz
 
