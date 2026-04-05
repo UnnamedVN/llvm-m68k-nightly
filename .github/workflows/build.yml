@@ -1,8 +1,5 @@
 name: Nightly build
 
-permissions:
-  contents: write
-
 on:
   workflow_dispatch:
   schedule:
@@ -37,10 +34,10 @@ jobs:
         run: |
           cd llvm-project && tar -czvf llvm-m68k-nightly.tar.gz llvm-m68k-nightly
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload
+        uses: actions/upload-artifact@v6
         with:
-          name: llvm-m68k-nightly-${{ env.DATE }}
-          tag_name: llvm-m68k-nightly-${{ env.DATE }}
-          files: llvm-project/llvm-m68k-nightly.tar.gz
+          name: llvm-m68k-nightly
+          path: llvm-project/llvm-m68k-nightly.tar.gz
+          retention-days: 3
 
