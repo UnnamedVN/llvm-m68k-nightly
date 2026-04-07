@@ -55,6 +55,6 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v6
         with:
-          name: package
+          name: llvm-m68k
           path: llvm-project/llvm-m68k.tar.zst
           retention-days: 3
