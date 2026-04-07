@@ -1,22 +1,28 @@
-name: Manual stable vlink build
+name: vlink build
+
+permissions:
+  contents: write
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: vlink version
+        required: true
+        default: vlink0_18a
+      release_tag:
+        description: Release tag
+        required: true
+        default: vlink-0.18a
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Get current date
-        run: echo "DATE=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
-
-      - name: Checkout
-        uses: actions/checkout@v6
-
       - name: Download vlink
         run: |
-          wget http://phoenix.owl.de/tags/vlink0_18a.tar.gz
-          tar -xzf vlink0_18a.tar.gz
+          wget https://phoenix.owl.de/tags/${{ inputs.version }}.tar.gz
+          tar -xzf ${{ inputs.version }}.tar.gz
 
       - name: Build vlink
         run: cd vlink && make
@@ -28,9 +34,8 @@ jobs:
           cp vlink package/bin
           tar -C package -cf - . | zstd -c -T0 --ultra -20 -o vlink.tar.zst
 
-      - name: Upload
-        uses: actions/upload-artifact@v6
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: vlink
-          path: vlink/vlink.tar.zst
-          retention-days: 3
+          tag_name: ${{ inputs.release_tag }}
+          files: vlink/vlink.tar.zst
