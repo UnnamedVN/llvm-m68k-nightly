@@ -1,0 +1,36 @@
+name: Manual stable vlink build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get current date
+        run: echo "DATE=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download vlink
+        run: |
+          wget http://phoenix.owl.de/tags/vlink0_18a.tar.gz
+          tar -xzf vlink0_18a.tar.gz
+
+      - name: Build vlink
+        run: cd vlink && make
+
+      - name: Package vlink
+        run: |
+          cd vlink
+          mkdir -p package/bin
+          cp vlink package/bin
+          tar -C package -cf - . | zstd -c -T0 --ultra -20 -o vlink.tar.zst
+
+      - name: Upload
+        uses: actions/upload-artifact@v6
+        with:
+          name: package
+          path: vlink/vlink.tar.gz
+          retention-days: 3

@@ -1,0 +1,60 @@
+name: Nightly llvm-m68k build
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get current date
+        run: echo "DATE=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+
+      - name: Download LLVM
+        run: git clone --depth=1 https://github.com/llvm/llvm-project
+
+      - name: Build LLVM
+        run: |
+          cd llvm-project
+
+          cmake \
+              -G Ninja \
+              -S llvm \
+              -B build \
+              -D CMAKE_INSTALL_PREFIX=llvm-m68k \
+              -D CMAKE_BUILD_TYPE="Release" \
+              -D CMAKE_C_COMPILER=clang \
+              -D CMAKE_CXX_COMPILER=clang++ \
+              -D LLVM_CCACHE_BUILD=ON \
+              -D LLVM_ENABLE_PROJECTS="clang" \
+              -D LLVM_ENABLE_RUNTIMES="" \
+              -D LLVM_ENABLE_LLD=ON \
+              -D LLVM_BUILD_LLVM_DYLIB=ON \
+              -D LLVM_LINK_LLVM_DYLIB=ON \
+              -D CLANG_LINK_CLANG_DYLIB=ON \
+              -D LLVM_TARGETS_TO_BUILD="X86" \
+              -D LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k" \
+              -D LLVM_INSTALL_TOOLCHAIN_ONLY=ON
+
+          ninja -C build -j $(nproc --all)
+
+      - name: Package LLVM
+        run: |
+          cd llvm-project
+          ninja -C build install/strip
+          tar -C llvm-m68k -cf - . | zstd -c -T0 --ultra -20 -o llvm-m68k.tar.zst
+
+      - name: Upload
+        uses: actions/upload-artifact@v6
+        with:
+          name: package
+          path: llvm-project/llvm-m68k.tar.gz
+          retention-days: 3
