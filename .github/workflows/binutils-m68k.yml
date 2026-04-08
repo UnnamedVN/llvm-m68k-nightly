@@ -31,7 +31,7 @@ jobs:
       - name: Build binutils
         run: |
           cd binutils
-          ./configure --prefix=out --target=m68k-elf
+          ./configure --prefix=$(pwd)/out --target=m68k-elf
           make -j $(nproc --all)
 
       - name: Package binutils
